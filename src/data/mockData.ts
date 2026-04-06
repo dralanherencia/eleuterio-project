@@ -1,0 +1,105 @@
+import type { Client, Project, Task } from '../types'
+
+export const CLIENTS: Client[] = [
+  { id: 'c1', name: 'MEPSO', color: '#378ADD' },
+  { id: 'c2', name: 'INERCO / EDF', color: '#1D9E75' },
+  { id: 'c3', name: 'EsSalud', color: '#7F77DD' },
+  { id: 'c4', name: 'Wari San Román', color: '#D85A30' },
+  { id: 'c5', name: 'Personal', color: '#888780' },
+]
+
+export const PROJECTS: Project[] = [
+  { id: 'p1', name: 'Gestión EMO 2026', client_id: 'c1', start_date: '2026-01-01', end_date: '2026-12-31', color: '#378ADD' },
+  { id: 'p2', name: 'Informe INERCO Q1', client_id: 'c2', start_date: '2026-03-01', end_date: '2026-04-30', color: '#1D9E75' },
+  { id: 'p3', name: 'Auditoría EsSalud', client_id: 'c3', start_date: '2026-02-01', end_date: '2026-05-31', color: '#7F77DD' },
+  { id: 'p4', name: 'Clínica Wari', client_id: 'c4', start_date: '2026-01-01', end_date: '2026-12-31', color: '#D85A30' },
+  { id: 'p5', name: 'Desarrollo personal', client_id: 'c5', start_date: '2026-01-01', end_date: '2026-12-31', color: '#888780' },
+]
+
+export const INITIAL_TASKS: Task[] = [
+  {
+    id: 't1', project_id: 'p1', client_id: 'c1',
+    title: 'Actualizar Matriz de Vencimiento EMO',
+    status: 'in_progress', progress: 65,
+    due_date: '2026-04-10',
+    next_step: 'Verificar DNIs del personal RETIRADO en planilla',
+    notes: 'Referencia: Matriz_Vencimiento_EMO_v3.xlsx',
+    position: 0,
+  },
+  {
+    id: 't2', project_id: 'p1', client_id: 'c1',
+    title: 'EMO Personal MEPLAB — Seguimiento',
+    status: 'pending', progress: 0,
+    due_date: '2026-04-20',
+    next_step: 'Coordinar con MEPLAB fechas de evaluación',
+    notes: null, position: 1,
+  },
+  {
+    id: 't3', project_id: 'p2', client_id: 'c2',
+    title: 'Informe de Actividades Febrero 2026',
+    status: 'review', progress: 90,
+    due_date: '2026-04-08',
+    next_step: 'Enviar borrador firmado a jefatura',
+    notes: 'Incluir tabla de atenciones y estadísticas SCTR',
+    position: 0,
+  },
+  {
+    id: 't4', project_id: 'p2', client_id: 'c2',
+    title: 'Cálculo MECGI — Suma combinada',
+    status: 'pending', progress: 20,
+    due_date: '2026-04-15',
+    next_step: 'Revisar fórmula con Ley 29783 y DS 003-98-SA',
+    notes: null, position: 2,
+  },
+  {
+    id: 't5', project_id: 'p3', client_id: 'c3',
+    title: 'App Auditoría EsSalud — Módulo PDF',
+    status: 'in_progress', progress: 45,
+    due_date: '2026-04-25',
+    next_step: 'Completar exportación PDF del reporte de auditoría',
+    notes: 'GitHub: dralanherencia/auditoria-essalud — Supabase conectado',
+    position: 0,
+  },
+  {
+    id: 't6', project_id: 'p3', client_id: 'c3',
+    title: 'Programa Pausas Activas — Abril',
+    status: 'done', progress: 100,
+    due_date: '2026-04-01',
+    next_step: null,
+    notes: 'Workbook 12 meses completado. RM 375-2008-TR.',
+    position: 0,
+  },
+  {
+    id: 't7', project_id: 'p4', client_id: 'c4',
+    title: 'Plan de negocio Clínica Wari San Román',
+    status: 'in_progress', progress: 40,
+    due_date: '2026-05-01',
+    next_step: 'Definir estructura societaria con socio inmobiliario',
+    notes: 'Modelo: clínica ocupacional Juliaca. Brand Wari San Román.',
+    position: 0,
+  },
+  {
+    id: 't8', project_id: 'p4', client_id: 'c4',
+    title: 'Licencia de funcionamiento — Requisitos DIRESA',
+    status: 'pending', progress: 5,
+    due_date: '2026-06-01',
+    next_step: 'Solicitar lista de requisitos a DIRESA Puno',
+    notes: null, position: 1,
+  },
+  {
+    id: 't9', project_id: 'p5', client_id: 'c5',
+    title: 'Curso de inglés — Nivel B1',
+    status: 'in_progress', progress: 30,
+    due_date: '2026-08-31',
+    next_step: 'Completar Unit 4 del curso online',
+    notes: 'Meta: alcanzar B2 para fin de año', position: 0,
+  },
+  {
+    id: 't10', project_id: 'p1', client_id: 'c1',
+    title: 'Nexo causal — Caso COEF',
+    status: 'review', progress: 75,
+    due_date: '2026-04-12',
+    next_step: 'Revisión final con metodología NIOSH',
+    notes: 'Aplicar modelo Rothman componente suficiente', position: 1,
+  },
+]

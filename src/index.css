@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #F0F2F5;
+  color: #1a1a2e;
+}
+
+.gantt-mepso .bar { fill: #378ADD !important; }
+.gantt-inerco .bar { fill: #1D9E75 !important; }
+.gantt-essalud .bar { fill: #7F77DD !important; }
+.gantt-wari .bar { fill: #D85A30 !important; }
+.gantt-personal .bar { fill: #888780 !important; }
+.gantt .bar-label { fill: #fff !important; font-size: 12px !important; }
+.gantt .today-highlight { fill: #FEF3C7 !important; opacity: 0.5; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
