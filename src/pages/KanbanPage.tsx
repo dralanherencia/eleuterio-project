@@ -4,15 +4,20 @@ import { KanbanBoard } from '../components/kanban/KanbanBoard'
 import { ClientManager } from '../components/shared/ClientManager'
 import { ProjectManager } from '../components/shared/ProjectManager'
 import type { Status, Assignee } from '../types'
+import { KanbanSkeleton, ErrorState } from '../components/shared/LoadingStates'
 import { ASSIGNEE_LABELS, ASSIGNEE_COLORS } from '../types'
 
 const ASSIGNEES: Assignee[] = ['alan', 'mercedes', 'both']
 
 export function KanbanPage() {
   const {
-    tasks, clients, projects, updateTask, createTask, deleteTask, moveTask,
+    tasks, clients, projects, loading, error, refetch,
+    updateTask, createTask, deleteTask, moveTask,
     createClient, updateClient, deleteClient, createProject, deleteProject,
   } = useTasks()
+
+  if (loading) return <KanbanSkeleton />
+  if (error) return <ErrorState message={error} onRetry={refetch} />
 
   const [selectedAssignee, setSelectedAssignee] = useState<Assignee | 'all'>('all')
   const [selectedProject, setSelectedProject] = useState<string>('all')
