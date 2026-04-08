@@ -36,7 +36,6 @@ export function TaskPanel({ task, isNew, clients, projects, onSave, onDelete, on
   if (!task || !form) return null
 
   const client = clients.find(c => c.id === form.client_id)
-  const clientProjects = projects.filter(p => p.client_id === form.client_id)
   const allProjects = projects
 
   const set = (field: keyof Task, value: string | number | null) =>
@@ -115,10 +114,9 @@ export function TaskPanel({ task, isNew, clients, projects, onSave, onDelete, on
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400 transition-all bg-white"
               >
                 <option value="">Sin proyecto</option>
-                {(clientProjects.length > 0 ? clientProjects : allProjects).map(p => {
+                {allProjects.map(p => {
                   const pc = clients.find(c => c.id === p.client_id)
-                  const label = clientProjects.length > 0 ? p.name : `${p.name}${pc ? ' (' + pc.name + ')' : ''}`
-                  return <option key={p.id} value={p.id}>{label}</option>
+                  return <option key={p.id} value={p.id}>{p.name}{pc ? ` · ${pc.name}` : ''}</option>
                 })}
               </select>
             </div>

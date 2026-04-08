@@ -15,36 +15,48 @@ export function KanbanPage() {
   } = useTasks()
 
   const [selectedAssignee, setSelectedAssignee] = useState<Assignee | 'all'>('all')
-  const [selectedProject, setSelectedProject] = useState<string>('')
-  const [selectedClients, setSelectedClients] = useState<string[]>([])
+  const [selectedProject, setSelectedProject] = useState<string>('all')
+  const [selectedClient, setSelectedClient] = useState<string>('all')
   const [showClientManager, setShowClientManager] = useState(false)
   const [showProjectManager, setShowProjectManager] = useState(false)
 
-  const toggleClient = (id: string) =>
-    setSelectedClients(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id])
+  // Three completely independent filters combined with AND
+  const filteredTasks = tasks.filter(t => {
+    const byAssignee = selectedAssignee === 'all' || t.assignee === selectedAssignee || t.assignee === 'both'
+    const byProject = selectedProject === 'all' || t.project_id === selectedProject
+    const byClient = selectedClient === 'all' || t.client_id === selectedClient
+    return byAssignee && byProject && byClient
+  })
 
-  // Filter pipeline: assignee → project → client
-  const filteredByAssignee = selectedAssignee === 'all'
-    ? tasks
-    : tasks.filter(t => t.assignee === selectedAssignee || t.assignee === 'both')
+  const FilterRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-xs text-gray-400 font-medium w-24 flex-shrink-0">{label}</span>
+      {children}
+    </div>
+  )
 
-  const filteredByProject = selectedProject
-    ? filteredByAssignee.filter(t => t.project_id === selectedProject)
-    : filteredByAssignee
-
-  const clientsInView = selectedProject
-    ? [...new Set(filteredByProject.map(t => t.client_id))]
-        .map(id => clients.find(c => c.id === id)).filter(Boolean) as typeof clients
-    : clients
+  const Chip = ({ label, active, color, onClick }: { label: string; active: boolean; color?: string; onClick: () => void }) => (
+    <button onClick={onClick}
+      className={`text-xs px-3 py-1.5 rounded-full border transition-all font-medium flex items-center gap-1.5 ${active ? 'border-transparent text-white' : 'bg-white border-gray-200 hover:border-gray-300'}`}
+      style={active
+        ? { backgroundColor: color || '#1a1a2e' }
+        : { color: color || '#6b7280' }
+      }>
+      {color && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: active ? 'white' : color }} />}
+      {label}
+    </button>
+  )
 
   return (
     <div className="flex flex-col h-full">
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Kanban</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Gestión de tareas por estado</p>
+          <p className="text-sm text-gray-400 mt-0.5">
+            {filteredTasks.length} tarea{filteredTasks.length !== 1 ? 's' : ''} visibles
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setShowProjectManager(true)}
@@ -64,76 +76,62 @@ export function KanbanPage() {
         </div>
       </div>
 
-      {/* Responsable filter — primary */}
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <span className="text-xs text-gray-400 font-medium w-20 flex-shrink-0">Responsable:</span>
-        <button onClick={() => setSelectedAssignee('all')}
-          className={`text-xs px-3 py-1.5 rounded-full border transition-all ${selectedAssignee === 'all' ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'}`}>
-          Todos
-        </button>
-        {ASSIGNEES.map(a => {
-          const ac = ASSIGNEE_COLORS[a]
-          const isSelected = selectedAssignee === a
-          return (
-            <button key={a} onClick={() => setSelectedAssignee(isSelected ? 'all' : a)}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-all font-medium ${isSelected ? 'border-transparent' : 'bg-white border-gray-200 hover:border-gray-300'}`}
-              style={isSelected ? { backgroundColor: ac.text, color: 'white' } : { color: ac.text, backgroundColor: ac.bg }}>
-              {ASSIGNEE_LABELS[a]}
-            </button>
-          )
-        })}
-      </div>
+      {/* Filters — all independent */}
+      <div className="space-y-2 mb-5 bg-gray-50 rounded-2xl p-4">
 
-      {/* Project filter */}
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <span className="text-xs text-gray-400 font-medium w-20 flex-shrink-0">Proyecto:</span>
-        <button onClick={() => { setSelectedProject(''); setSelectedClients([]) }}
-          className={`text-xs px-3 py-1.5 rounded-full border transition-all ${!selectedProject ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'}`}>
-          Todos
-        </button>
-        {projects.map(p => {
-          const client = clients.find(c => c.id === p.client_id)
-          const isSelected = selectedProject === p.id
-          return (
-            <button key={p.id} onClick={() => { setSelectedProject(isSelected ? '' : p.id); setSelectedClients([]) }}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-all flex items-center gap-1.5 ${isSelected ? 'text-white border-transparent' : 'bg-white border-gray-200 hover:border-gray-300'}`}
-              style={isSelected ? { backgroundColor: client?.color || '#888' } : { color: client?.color || '#888' }}>
-              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                style={{ backgroundColor: isSelected ? 'white' : (client?.color || '#888') }} />
-              {p.name}
-            </button>
-          )
-        })}
-        {projects.length === 0 && (
-          <button onClick={() => setShowProjectManager(true)} className="text-xs text-blue-500 hover:underline">
-            + Crear primer proyecto
-          </button>
-        )}
-      </div>
+        {/* Responsable */}
+        <FilterRow label="Responsable:">
+          <Chip label="Todos" active={selectedAssignee === 'all'} onClick={() => setSelectedAssignee('all')} />
+          {ASSIGNEES.map(a => {
+            const ac = ASSIGNEE_COLORS[a]
+            return (
+              <button key={a}
+                onClick={() => setSelectedAssignee(selectedAssignee === a ? 'all' : a)}
+                className={`text-xs px-3 py-1.5 rounded-full border transition-all font-medium ${selectedAssignee === a ? 'border-transparent text-white' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+                style={selectedAssignee === a
+                  ? { backgroundColor: ac.text }
+                  : { color: ac.text, backgroundColor: ac.bg }}>
+                {ASSIGNEE_LABELS[a]}
+              </button>
+            )
+          })}
+        </FilterRow>
 
-      {/* Client filter */}
-      <div className="flex items-center gap-2 mb-5 flex-wrap">
-        <span className="text-xs text-gray-400 font-medium w-20 flex-shrink-0">Cliente:</span>
-        <button onClick={() => setSelectedClients([])}
-          className={`text-xs px-3 py-1.5 rounded-full border transition-all ${selectedClients.length === 0 ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'}`}>
-          Todos
-        </button>
-        {clientsInView.map(c => (
-          <button key={c.id} onClick={() => toggleClient(c.id)}
-            className={`text-xs px-3 py-1.5 rounded-full border transition-all flex items-center gap-1.5 ${selectedClients.includes(c.id) ? 'text-white border-transparent' : 'bg-white border-gray-200 hover:border-gray-300'}`}
-            style={selectedClients.includes(c.id) ? { backgroundColor: c.color, borderColor: c.color } : { color: c.color }}>
-            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-              style={{ backgroundColor: selectedClients.includes(c.id) ? 'white' : c.color }} />
-            {c.name}
-          </button>
-        ))}
+        {/* Proyecto */}
+        <FilterRow label="Proyecto:">
+          <Chip label="Todos" active={selectedProject === 'all'} onClick={() => setSelectedProject('all')} />
+          {projects.map(p => {
+            const c = clients.find(cl => cl.id === p.client_id)
+            return (
+              <Chip key={p.id} label={p.name} active={selectedProject === p.id}
+                color={c?.color || '#888780'}
+                onClick={() => setSelectedProject(selectedProject === p.id ? 'all' : p.id)} />
+            )
+          })}
+          {projects.length === 0 && (
+            <button onClick={() => setShowProjectManager(true)} className="text-xs text-blue-500 hover:underline">
+              + Crear proyecto
+            </button>
+          )}
+        </FilterRow>
+
+        {/* Cliente */}
+        <FilterRow label="Cliente:">
+          <Chip label="Todos" active={selectedClient === 'all'} onClick={() => setSelectedClient('all')} />
+          {clients.map(c => (
+            <Chip key={c.id} label={c.name} active={selectedClient === c.id}
+              color={c.color}
+              onClick={() => setSelectedClient(selectedClient === c.id ? 'all' : c.id)} />
+          ))}
+        </FilterRow>
+
       </div>
 
       <KanbanBoard
-        tasks={filteredByProject}
+        tasks={filteredTasks}
         clients={clients}
         projects={projects}
-        selectedClients={selectedClients}
+        selectedClients={[]}
         onMoveTask={(id, status, position) => moveTask(id, status as Status, position)}
         onUpdateTask={updateTask}
         onCreateTask={createTask}
