@@ -3,15 +3,18 @@ import { useTasks } from '../hooks/useTasks'
 import { KanbanBoard } from '../components/kanban/KanbanBoard'
 import { ClientManager } from '../components/shared/ClientManager'
 import { ProjectManager } from '../components/shared/ProjectManager'
-import type { Status } from '../types'
+import type { Status, Assignee } from '../types'
+import { ASSIGNEE_LABELS, ASSIGNEE_COLORS } from '../types'
+
+const ASSIGNEES: Assignee[] = ['alan', 'mercedes', 'both']
 
 export function KanbanPage() {
   const {
     tasks, clients, projects, updateTask, createTask, deleteTask, moveTask,
-    createClient, updateClient, deleteClient,
-    createProject, deleteProject,
+    createClient, updateClient, deleteClient, createProject, deleteProject,
   } = useTasks()
 
+  const [selectedAssignee, setSelectedAssignee] = useState<Assignee | 'all'>('all')
   const [selectedProject, setSelectedProject] = useState<string>('')
   const [selectedClients, setSelectedClients] = useState<string[]>([])
   const [showClientManager, setShowClientManager] = useState(false)
@@ -20,9 +23,14 @@ export function KanbanPage() {
   const toggleClient = (id: string) =>
     setSelectedClients(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id])
 
+  // Filter pipeline: assignee → project → client
+  const filteredByAssignee = selectedAssignee === 'all'
+    ? tasks
+    : tasks.filter(t => t.assignee === selectedAssignee || t.assignee === 'both')
+
   const filteredByProject = selectedProject
-    ? tasks.filter(t => t.project_id === selectedProject)
-    : tasks
+    ? filteredByAssignee.filter(t => t.project_id === selectedProject)
+    : filteredByAssignee
 
   const clientsInView = selectedProject
     ? [...new Set(filteredByProject.map(t => t.client_id))]
@@ -33,7 +41,7 @@ export function KanbanPage() {
     <div className="flex flex-col h-full">
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Kanban</h1>
           <p className="text-sm text-gray-400 mt-0.5">Gestión de tareas por estado</p>
@@ -56,9 +64,29 @@ export function KanbanPage() {
         </div>
       </div>
 
+      {/* Responsable filter — primary */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <span className="text-xs text-gray-400 font-medium w-20 flex-shrink-0">Responsable:</span>
+        <button onClick={() => setSelectedAssignee('all')}
+          className={`text-xs px-3 py-1.5 rounded-full border transition-all ${selectedAssignee === 'all' ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'}`}>
+          Todos
+        </button>
+        {ASSIGNEES.map(a => {
+          const ac = ASSIGNEE_COLORS[a]
+          const isSelected = selectedAssignee === a
+          return (
+            <button key={a} onClick={() => setSelectedAssignee(isSelected ? 'all' : a)}
+              className={`text-xs px-3 py-1.5 rounded-full border transition-all font-medium ${isSelected ? 'border-transparent' : 'bg-white border-gray-200 hover:border-gray-300'}`}
+              style={isSelected ? { backgroundColor: ac.text, color: 'white' } : { color: ac.text, backgroundColor: ac.bg }}>
+              {ASSIGNEE_LABELS[a]}
+            </button>
+          )
+        })}
+      </div>
+
       {/* Project filter */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <span className="text-xs text-gray-400 font-medium">Proyecto:</span>
+        <span className="text-xs text-gray-400 font-medium w-20 flex-shrink-0">Proyecto:</span>
         <button onClick={() => { setSelectedProject(''); setSelectedClients([]) }}
           className={`text-xs px-3 py-1.5 rounded-full border transition-all ${!selectedProject ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'}`}>
           Todos
@@ -67,8 +95,7 @@ export function KanbanPage() {
           const client = clients.find(c => c.id === p.client_id)
           const isSelected = selectedProject === p.id
           return (
-            <button key={p.id}
-              onClick={() => { setSelectedProject(isSelected ? '' : p.id); setSelectedClients([]) }}
+            <button key={p.id} onClick={() => { setSelectedProject(isSelected ? '' : p.id); setSelectedClients([]) }}
               className={`text-xs px-3 py-1.5 rounded-full border transition-all flex items-center gap-1.5 ${isSelected ? 'text-white border-transparent' : 'bg-white border-gray-200 hover:border-gray-300'}`}
               style={isSelected ? { backgroundColor: client?.color || '#888' } : { color: client?.color || '#888' }}>
               <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
@@ -78,8 +105,7 @@ export function KanbanPage() {
           )
         })}
         {projects.length === 0 && (
-          <button onClick={() => setShowProjectManager(true)}
-            className="text-xs text-blue-500 hover:underline">
+          <button onClick={() => setShowProjectManager(true)} className="text-xs text-blue-500 hover:underline">
             + Crear primer proyecto
           </button>
         )}
@@ -87,7 +113,7 @@ export function KanbanPage() {
 
       {/* Client filter */}
       <div className="flex items-center gap-2 mb-5 flex-wrap">
-        <span className="text-xs text-gray-400 font-medium">Cliente:</span>
+        <span className="text-xs text-gray-400 font-medium w-20 flex-shrink-0">Cliente:</span>
         <button onClick={() => setSelectedClients([])}
           className={`text-xs px-3 py-1.5 rounded-full border transition-all ${selectedClients.length === 0 ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'}`}>
           Todos
@@ -115,23 +141,14 @@ export function KanbanPage() {
       />
 
       {showProjectManager && (
-        <ProjectManager
-          projects={projects}
-          clients={clients}
-          onCreateProject={createProject}
-          onDeleteProject={deleteProject}
-          onClose={() => setShowProjectManager(false)}
-        />
+        <ProjectManager projects={projects} clients={clients}
+          onCreateProject={createProject} onDeleteProject={deleteProject}
+          onClose={() => setShowProjectManager(false)} />
       )}
-
       {showClientManager && (
-        <ClientManager
-          clients={clients}
-          onCreateClient={createClient}
-          onUpdateClient={updateClient}
-          onDeleteClient={deleteClient}
-          onClose={() => setShowClientManager(false)}
-        />
+        <ClientManager clients={clients}
+          onCreateClient={createClient} onUpdateClient={updateClient} onDeleteClient={deleteClient}
+          onClose={() => setShowClientManager(false)} />
       )}
     </div>
   )

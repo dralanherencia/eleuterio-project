@@ -25,6 +25,9 @@ export const INITIAL_TASKS: Task[] = [
     next_step: 'Verificar DNIs del personal RETIRADO en planilla',
     notes: 'Referencia: Matriz_Vencimiento_EMO_v3.xlsx',
     position: 0,
+    file_url: null,
+    priority: "medium" as const,
+    assignee: "alan" as const,
   },
   {
     id: 't2', project_id: 'p1', client_id: 'c1',
@@ -33,6 +36,9 @@ export const INITIAL_TASKS: Task[] = [
     due_date: '2026-04-20',
     next_step: 'Coordinar con MEPLAB fechas de evaluación',
     notes: null, position: 1,
+    file_url: null,
+    priority: "medium" as const,
+    assignee: "alan" as const,
   },
   {
     id: 't3', project_id: 'p2', client_id: 'c2',
@@ -42,6 +48,9 @@ export const INITIAL_TASKS: Task[] = [
     next_step: 'Enviar borrador firmado a jefatura',
     notes: 'Incluir tabla de atenciones y estadísticas SCTR',
     position: 0,
+    file_url: null,
+    priority: "medium" as const,
+    assignee: "alan" as const,
   },
   {
     id: 't4', project_id: 'p2', client_id: 'c2',
@@ -50,6 +59,9 @@ export const INITIAL_TASKS: Task[] = [
     due_date: '2026-04-15',
     next_step: 'Revisar fórmula con Ley 29783 y DS 003-98-SA',
     notes: null, position: 2,
+    file_url: null,
+    priority: "medium" as const,
+    assignee: "alan" as const,
   },
   {
     id: 't5', project_id: 'p3', client_id: 'c3',
@@ -59,6 +71,9 @@ export const INITIAL_TASKS: Task[] = [
     next_step: 'Completar exportación PDF del reporte de auditoría',
     notes: 'GitHub: dralanherencia/auditoria-essalud — Supabase conectado',
     position: 0,
+    file_url: null,
+    priority: "medium" as const,
+    assignee: "alan" as const,
   },
   {
     id: 't6', project_id: 'p3', client_id: 'c3',
@@ -68,6 +83,9 @@ export const INITIAL_TASKS: Task[] = [
     next_step: null,
     notes: 'Workbook 12 meses completado. RM 375-2008-TR.',
     position: 0,
+    file_url: null,
+    priority: "medium" as const,
+    assignee: "alan" as const,
   },
   {
     id: 't7', project_id: 'p4', client_id: 'c4',
@@ -77,6 +95,9 @@ export const INITIAL_TASKS: Task[] = [
     next_step: 'Definir estructura societaria con socio inmobiliario',
     notes: 'Modelo: clínica ocupacional Juliaca. Brand Wari San Román.',
     position: 0,
+    file_url: null,
+    priority: "medium" as const,
+    assignee: "alan" as const,
   },
   {
     id: 't8', project_id: 'p4', client_id: 'c4',
@@ -85,6 +106,9 @@ export const INITIAL_TASKS: Task[] = [
     due_date: '2026-06-01',
     next_step: 'Solicitar lista de requisitos a DIRESA Puno',
     notes: null, position: 1,
+    file_url: null,
+    priority: "medium" as const,
+    assignee: "alan" as const,
   },
   {
     id: 't9', project_id: 'p5', client_id: 'c5',
@@ -93,6 +117,9 @@ export const INITIAL_TASKS: Task[] = [
     due_date: '2026-08-31',
     next_step: 'Completar Unit 4 del curso online',
     notes: 'Meta: alcanzar B2 para fin de año', position: 0,
+    file_url: null,
+    priority: "medium" as const,
+    assignee: "alan" as const,
   },
   {
     id: 't10', project_id: 'p1', client_id: 'c1',
@@ -101,5 +128,8 @@ export const INITIAL_TASKS: Task[] = [
     due_date: '2026-04-12',
     next_step: 'Revisión final con metodología NIOSH',
     notes: 'Aplicar modelo Rothman componente suficiente', position: 1,
+    file_url: null,
+    priority: "medium" as const,
+    assignee: "alan" as const,
   },
 ]

@@ -59,6 +59,9 @@ export function KanbanBoard({
       due_date: null,
       next_step: null,
       notes: null,
+      file_url: null,
+      priority: 'medium',
+      assignee: 'alan',
       position: 0,
     }
     setIsNew(true)

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Task, Status, Client, Project } from '../../types'
+import type { Task, Status, Priority, Assignee, Client, Project } from '../../types'
 import { STATUS_LABELS } from '../../types'
 import { ClientChip } from '../shared/ClientChip'
 
@@ -174,6 +174,34 @@ export function TaskPanel({ task, isNew, clients, projects, onSave, onDelete, on
             </div>
           </div>
 
+          {/* Prioridad y Responsable */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Prioridad</label>
+              <select
+                value={form.priority || 'medium'}
+                onChange={e => set('priority', e.target.value as Priority)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400 transition-all bg-white"
+              >
+                <option value="high">↑ Alta</option>
+                <option value="medium">— Media</option>
+                <option value="low">↓ Baja</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Responsable</label>
+              <select
+                value={form.assignee || 'alan'}
+                onChange={e => set('assignee', e.target.value as Assignee)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400 transition-all bg-white"
+              >
+                <option value="alan">Alan</option>
+                <option value="mercedes">Mercedes</option>
+                <option value="both">Ambos</option>
+              </select>
+            </div>
+          </div>
+
           {/* Próximo paso */}
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1.5">Próximo paso</label>
@@ -196,6 +224,27 @@ export function TaskPanel({ task, isNew, clients, projects, onSave, onDelete, on
               placeholder="Observaciones, referencias, pendientes…"
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 transition-all resize-none"
             />
+          </div>
+
+          {/* Link de archivo */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Link de archivo</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="url"
+                value={form.file_url || ''}
+                onChange={e => set('file_url', e.target.value || null)}
+                placeholder="https://docs.google.com/..."
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 transition-all"
+              />
+              {form.file_url && (
+                <a href={form.file_url} target="_blank" rel="noopener noreferrer"
+                  className="flex-shrink-0 bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors"
+                  onClick={e => e.stopPropagation()}>
+                  Abrir
+                </a>
+              )}
+            </div>
           </div>
         </div>
 
