@@ -1,6 +1,19 @@
 import { useState } from 'react'
 import type { Project, Client } from '../../types'
 
+const PROJECT_COLORS = [
+  '#378ADD', '#1D9E75', '#7F77DD', '#D85A30', '#E24B4A',
+  '#EF9F27', '#D4537E', '#639922', '#185FA5', '#854F0B',
+  '#0F6E56', '#534AB7', '#993C1D', '#3B6D11', '#5F5E5A',
+]
+
+function getNextColor(existingProjects: Project[]): string {
+  const usedColors = existingProjects.map(p => p.color)
+  const available = PROJECT_COLORS.filter(c => !usedColors.includes(c))
+  if (available.length > 0) return available[0]
+  return PROJECT_COLORS[existingProjects.length % PROJECT_COLORS.length]
+}
+
 interface Props {
   projects: Project[]
   clients: Client[]
@@ -18,13 +31,13 @@ export function ProjectManager({ projects, clients, onCreateProject, onDeletePro
   const handleCreate = async () => {
     if (!newName.trim()) return
     setSaving(true)
-    const client = clients.find(c => c.id === newClientId)
+    const autoColor = getNextColor(projects)
     await onCreateProject({
       name: newName.trim(),
       client_id: newClientId,
       start_date: new Date().toISOString().split('T')[0],
       end_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      color: client?.color || '#888780',
+      color: autoColor,
     })
     setNewName('')
     setNewClientId('')
