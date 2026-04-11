@@ -4,6 +4,8 @@ import type { DropResult } from '@hello-pangea/dnd'
 import type { Task, Status, Client, Project } from '../../types'
 import { KanbanColumn } from './KanbanColumn'
 import { TaskPanel } from './TaskPanel'
+import { ConfettiCanvas, CompletionToast, updateStreakOnCompletion } from './Celebration'
+import type { default as StreakType } from './Celebration'
 
 const STATUSES: Status[] = ['pending', 'in_progress', 'review', 'done']
 
@@ -25,6 +27,12 @@ export function KanbanBoard({
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [isNew, setIsNew] = useState(false)
 
+  // Celebration state
+  const [confettiTrigger, setConfettiTrigger] = useState(0)
+  const [showToast, setShowToast] = useState(false)
+  const [toastStreak, setToastStreak] = useState({ currentStreak: 0, lastCompletionDate: '', bestStreak: 0, totalCompleted: 0 })
+  const [toastWeekly, setToastWeekly] = useState({ weekStart: '', completed: 0, goal: 10 })
+
   const filtered = selectedClients.length > 0
     ? tasks.filter(t => selectedClients.includes(t.client_id))
     : tasks
@@ -32,10 +40,29 @@ export function KanbanBoard({
   const getColumnTasks = (status: Status) =>
     filtered.filter(t => t.status === status).sort((a, b) => a.position - b.position)
 
+  const triggerCelebration = () => {
+    const { streak, weekly } = updateStreakOnCompletion()
+    setToastStreak(streak)
+    setToastWeekly(weekly)
+    setConfettiTrigger(prev => prev + 1)
+    setShowToast(false)
+    // Small delay so toast re-mounts
+    setTimeout(() => setShowToast(true), 50)
+  }
+
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return
-    const { draggableId, destination } = result
+    const { draggableId, source, destination } = result
+
+    // Check if task was moved TO "done" from a different column
+    const task = tasks.find(t => t.id === draggableId)
+    const movedToDone = destination.droppableId === 'done' && source.droppableId !== 'done'
+
     onMoveTask(draggableId, destination.droppableId as Status, destination.index)
+
+    if (movedToDone && task) {
+      triggerCelebration()
+    }
   }
 
   const handleSave = (task: Task) => {
@@ -43,6 +70,11 @@ export function KanbanBoard({
       const { id: _id, ...rest } = task
       onCreateTask({ ...rest })
     } else {
+      // Check if status changed to 'done'
+      const original = tasks.find(t => t.id === task.id)
+      if (original && original.status !== 'done' && task.status === 'done') {
+        triggerCelebration()
+      }
       onUpdateTask(task.id, task)
     }
     setActiveTask(null)
@@ -70,6 +102,12 @@ export function KanbanBoard({
 
   return (
     <>
+      {/* Confetti overlay */}
+      <ConfettiCanvas trigger={confettiTrigger} />
+
+      {/* Completion toast */}
+      <CompletionToast show={showToast} streak={toastStreak} weekly={toastWeekly} />
+
       <div className="flex items-center justify-between mb-4 px-1">
         <span className="text-sm text-gray-500">{filtered.length} tareas</span>
         <button
