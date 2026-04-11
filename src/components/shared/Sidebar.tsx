@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import { StreakBadge } from '../kanban/Celebration'
 
 const links = [
   {
@@ -86,6 +87,11 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
+
+      {/* Streak badge */}
+      <div className="px-3 mb-2">
+        <StreakBadge />
+      </div>
 
       <div className="p-4 border-t border-gray-100">
         <div className="flex items-center gap-2.5 mb-3">
