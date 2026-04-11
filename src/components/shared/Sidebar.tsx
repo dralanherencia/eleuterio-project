@@ -1,19 +1,10 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { StreakBadge } from '../kanban/Celebration'
+import { StreakBadge } from '../../Celebration'
 
 const links = [
   {
-    to: '/', label: 'Dashboard',
-    icon: (
-      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-        <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
-        <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
-      </svg>
-    ),
-  },
-  {
-    to: '/kanban', label: 'Kanban',
+    to: '/', label: 'Tareas',
     icon: (
       <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
         <rect x="3" y="3" width="5" height="18" rx="1.5"/><rect x="10" y="3" width="5" height="12" rx="1.5"/>
@@ -44,11 +35,7 @@ export function Sidebar() {
     ? 'Dra. Mercedes Vergara'
     : user?.email?.split('@')[0] || 'Usuario'
 
-  const role = user?.email === 'jeanpihero2@gmail.com'
-    ? 'Méd. Ocupacional'
-    : user?.email === 'maria.vergara@upch.pe'
-    ? 'Méd. Ocupacional'
-    : 'Usuario'
+  const role = 'Méd. Ocupacional'
 
   const avatarColor = user?.email === 'maria.vergara@upch.pe'
     ? { bg: '#F3E8FF', text: '#7F77DD' }

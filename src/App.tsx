@@ -4,12 +4,10 @@ import { useAuth } from './hooks/useAuth'
 import { TaskProvider } from './context/TaskContext'
 import { Sidebar } from './components/shared/Sidebar'
 import { LoginPage } from './pages/LoginPage'
-import { DashboardSkeleton, KanbanSkeleton } from './components/shared/LoadingStates'
+import { KanbanSkeleton } from './components/shared/LoadingStates'
 
-// Lazy load pages — each loads only when visited
-const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
-const KanbanPage    = lazy(() => import('./pages/KanbanPage').then(m => ({ default: m.KanbanPage })))
-const GanttPage     = lazy(() => import('./pages/GanttPage').then(m => ({ default: m.GanttPage })))
+const KanbanPage = lazy(() => import('./pages/KanbanPage').then(m => ({ default: m.KanbanPage })))
+const GanttPage  = lazy(() => import('./pages/GanttPage').then(m => ({ default: m.GanttPage })))
 
 function AppLoader() {
   return (
@@ -41,11 +39,6 @@ function ProtectedApp() {
         <main className="flex-1 p-8 overflow-auto min-h-screen">
           <Routes>
             <Route path="/" element={
-              <Suspense fallback={<DashboardSkeleton />}>
-                <DashboardPage />
-              </Suspense>
-            }/>
-            <Route path="/kanban" element={
               <Suspense fallback={<KanbanSkeleton />}>
                 <KanbanPage />
               </Suspense>

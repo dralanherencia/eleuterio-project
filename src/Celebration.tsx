@@ -58,14 +58,14 @@ function playChime() {
 const STREAK_KEY = 'eleuterio_streak'
 const WEEKLY_KEY = 'eleuterio_weekly'
 
-interface StreakData {
+export interface StreakData {
   currentStreak: number
   lastCompletionDate: string // YYYY-MM-DD
   bestStreak: number
   totalCompleted: number
 }
 
-interface WeeklyData {
+export interface WeeklyData {
   weekStart: string // YYYY-MM-DD (Monday)
   completed: number
   goal: number
