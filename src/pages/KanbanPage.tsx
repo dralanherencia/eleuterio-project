@@ -9,6 +9,9 @@ import { ASSIGNEE_LABELS, ASSIGNEE_COLORS } from '../types'
 
 const ASSIGNEES: Assignee[] = ['alan', 'mercedes', 'both']
 
+// Nombres de clients que son "responsables" (personas), no clientes-empresa
+const RESPONSABLE_CLIENT_NAMES = ['Alan', 'Mercedes', 'Alan y Mercedes', 'Personal']
+
 export function KanbanPage() {
   const {
     tasks, clients, projects, loading, error, refetch,
@@ -19,19 +22,49 @@ export function KanbanPage() {
   if (loading) return <KanbanSkeleton />
   if (error) return <ErrorState message={error} onRetry={refetch} />
 
-  const [selectedAssignee, setSelectedAssignee] = useState<Assignee | 'all'>('all')
   const [selectedProject, setSelectedProject] = useState<string>('all')
+  const [selectedAssignee, setSelectedAssignee] = useState<Assignee | 'all'>('all')
   const [selectedClient, setSelectedClient] = useState<string>('all')
   const [showClientManager, setShowClientManager] = useState(false)
   const [showProjectManager, setShowProjectManager] = useState(false)
 
-  // Three completely independent filters combined with AND
-  const filteredTasks = tasks.filter(t => {
-    const byAssignee = selectedAssignee === 'all' || t.assignee === selectedAssignee || t.assignee === 'both'
-    const byProject = selectedProject === 'all' || t.project_id === selectedProject
-    const byClient = selectedClient === 'all' || t.client_id === selectedClient
-    return byAssignee && byProject && byClient
-  })
+  // --- JERARQUÍA: Proyecto > Responsable (estricto) > Cliente ---
+
+  // 1. Filtrar por proyecto
+  const projectTasks = selectedProject === 'all'
+    ? tasks
+    : tasks.filter(t => t.project_id === selectedProject)
+
+  // 2. Filtrar por responsable — ESTRICTO: NO incluye "both" al filtrar por alan o mercedes
+  const respTasks = selectedAssignee === 'all'
+    ? projectTasks
+    : projectTasks.filter(t => t.assignee === selectedAssignee)
+
+  // 3. Filtrar por cliente (client_id que NO es persona/responsable)
+  const filteredTasks = selectedClient === 'all'
+    ? respTasks
+    : respTasks.filter(t => t.client_id === selectedClient)
+
+  // Clientes-empresa dinámicos: solo los que tienen tareas visibles en el contexto actual
+  const clientesEmpresa = clients.filter(c => !RESPONSABLE_CLIENT_NAMES.includes(c.name))
+  const usedClientIds = new Set(respTasks.map(t => t.client_id).filter(Boolean))
+  const visibleClientes = clientesEmpresa.filter(c => usedClientIds.has(c.id))
+
+  // Reset client filter cuando cambia proyecto o responsable
+  const handleProjectChange = (id: string) => {
+    setSelectedProject(id === selectedProject ? 'all' : id)
+    setSelectedAssignee('all')
+    setSelectedClient('all')
+  }
+
+  const handleAssigneeChange = (a: Assignee | 'all') => {
+    setSelectedAssignee(a === selectedAssignee ? 'all' : a)
+    setSelectedClient('all')
+  }
+
+  const handleClientChange = (id: string) => {
+    setSelectedClient(id === selectedClient ? 'all' : id)
+  }
 
   const FilterRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
     <div className="flex items-center gap-2 flex-wrap">
@@ -61,6 +94,9 @@ export function KanbanPage() {
           <h1 className="text-xl font-semibold text-gray-900">Kanban</h1>
           <p className="text-sm text-gray-400 mt-0.5">
             {filteredTasks.length} tarea{filteredTasks.length !== 1 ? 's' : ''} visibles
+            {selectedProject !== 'all' && (
+              <span className="text-gray-300"> · {projects.find(p => p.id === selectedProject)?.name}</span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -81,36 +117,21 @@ export function KanbanPage() {
         </div>
       </div>
 
-      {/* Filters — all independent */}
+      {/* Filters — JERÁRQUICOS: Proyecto > Responsable > Cliente */}
       <div className="space-y-2 mb-5 bg-gray-50 rounded-2xl p-4">
 
-        {/* Responsable */}
-        <FilterRow label="Responsable:">
-          <Chip label="Todos" active={selectedAssignee === 'all'} onClick={() => setSelectedAssignee('all')} />
-          {ASSIGNEES.map(a => {
-            const ac = ASSIGNEE_COLORS[a]
-            return (
-              <button key={a}
-                onClick={() => setSelectedAssignee(selectedAssignee === a ? 'all' : a)}
-                className={`text-xs px-3 py-1.5 rounded-full border transition-all font-medium ${selectedAssignee === a ? 'border-transparent text-white' : 'border-gray-200 bg-white hover:border-gray-300'}`}
-                style={selectedAssignee === a
-                  ? { backgroundColor: ac.text }
-                  : { color: ac.text, backgroundColor: ac.bg }}>
-                {ASSIGNEE_LABELS[a]}
-              </button>
-            )
-          })}
-        </FilterRow>
-
-        {/* Proyecto */}
+        {/* 1. Proyecto (nivel superior) */}
         <FilterRow label="Proyecto:">
-          <Chip label="Todos" active={selectedProject === 'all'} onClick={() => setSelectedProject('all')} />
+          <Chip label="Todos" active={selectedProject === 'all'} onClick={() => handleProjectChange('all')} />
           {projects.map(p => {
             const c = clients.find(cl => cl.id === p.client_id)
+            const count = tasks.filter(t => t.project_id === p.id).length
             return (
-              <Chip key={p.id} label={p.name} active={selectedProject === p.id}
-                color={c?.color || '#888780'}
-                onClick={() => setSelectedProject(selectedProject === p.id ? 'all' : p.id)} />
+              <Chip key={p.id}
+                label={`${p.name} (${count})`}
+                active={selectedProject === p.id}
+                color={c?.color || p.color || '#888780'}
+                onClick={() => handleProjectChange(p.id)} />
             )
           })}
           {projects.length === 0 && (
@@ -120,15 +141,36 @@ export function KanbanPage() {
           )}
         </FilterRow>
 
-        {/* Cliente */}
-        <FilterRow label="Cliente:">
-          <Chip label="Todos" active={selectedClient === 'all'} onClick={() => setSelectedClient('all')} />
-          {clients.map(c => (
-            <Chip key={c.id} label={c.name} active={selectedClient === c.id}
-              color={c.color}
-              onClick={() => setSelectedClient(selectedClient === c.id ? 'all' : c.id)} />
-          ))}
+        {/* 2. Responsable (estricto — NO incluye "Ambos" al filtrar) */}
+        <FilterRow label="Responsable:">
+          <Chip label="Todos" active={selectedAssignee === 'all'} onClick={() => handleAssigneeChange('all')} />
+          {ASSIGNEES.map(a => {
+            const ac = ASSIGNEE_COLORS[a]
+            const count = projectTasks.filter(t => t.assignee === a).length
+            return (
+              <button key={a}
+                onClick={() => handleAssigneeChange(a)}
+                className={`text-xs px-3 py-1.5 rounded-full border transition-all font-medium ${selectedAssignee === a ? 'border-transparent text-white' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+                style={selectedAssignee === a
+                  ? { backgroundColor: ac.text }
+                  : { color: ac.text, backgroundColor: ac.bg }}>
+                {ASSIGNEE_LABELS[a]} ({count})
+              </button>
+            )
+          })}
         </FilterRow>
+
+        {/* 3. Cliente (dinámico — solo muestra clientes-empresa con tareas visibles) */}
+        {visibleClientes.length > 0 && (
+          <FilterRow label="Cliente:">
+            <Chip label="Todos" active={selectedClient === 'all'} onClick={() => handleClientChange('all')} />
+            {visibleClientes.map(c => (
+              <Chip key={c.id} label={c.name} active={selectedClient === c.id}
+                color={c.color}
+                onClick={() => handleClientChange(c.id)} />
+            ))}
+          </FilterRow>
+        )}
 
       </div>
 
