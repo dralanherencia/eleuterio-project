@@ -11,7 +11,7 @@ export interface Client {
 export interface Project {
   id: string
   name: string
-  client_id: string
+  client_id: string | null
   start_date: string
   end_date: string
   color: string

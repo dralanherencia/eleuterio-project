@@ -18,33 +18,71 @@ interface Props {
   projects: Project[]
   clients: Client[]
   onCreateProject: (p: Omit<Project, 'id'>) => Promise<Project | null>
+  onUpdateProject: (id: string, updates: Partial<Project>) => Promise<void>
   onDeleteProject: (id: string) => Promise<void>
   onClose: () => void
 }
 
-export function ProjectManager({ projects, clients, onCreateProject, onDeleteProject, onClose }: Props) {
+export function ProjectManager({ projects, clients, onCreateProject, onUpdateProject, onDeleteProject, onClose }: Props) {
   const [newName, setNewName] = useState('')
   const [newClientId, setNewClientId] = useState('')
+  const [newColor, setNewColor] = useState(() => getNextColor(projects))
   const [saving, setSaving] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+
+  // Edit state
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editClientId, setEditClientId] = useState('')
+  const [editColor, setEditColor] = useState('')
 
   const handleCreate = async () => {
     if (!newName.trim()) return
     setSaving(true)
-    const autoColor = getNextColor(projects)
     await onCreateProject({
       name: newName.trim(),
-      client_id: newClientId,
+      client_id: newClientId || null,
       start_date: new Date().toISOString().split('T')[0],
       end_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      color: autoColor,
+      color: newColor,
     })
     setNewName('')
     setNewClientId('')
+    setNewColor(getNextColor(projects))
     setSaving(false)
   }
 
-  const getClient = (clientId: string) => clients.find(c => c.id === clientId)
+  const handleEdit = (project: Project) => {
+    setEditingId(project.id)
+    setEditName(project.name)
+    setEditClientId(project.client_id || '')
+    setEditColor(project.color)
+    setConfirmDelete(null)
+  }
+
+  const handleSaveEdit = async (id: string) => {
+    if (!editName.trim()) return
+    await onUpdateProject(id, {
+      name: editName.trim(),
+      client_id: editClientId || null,
+      color: editColor,
+    })
+    setEditingId(null)
+  }
+
+  const getClient = (clientId: string | null) =>
+    clientId ? clients.find(c => c.id === clientId) : undefined
+
+  const ColorPicker = ({ value, onChange }: { value: string; onChange: (c: string) => void }) => (
+    <div className="flex flex-wrap gap-1.5">
+      {PROJECT_COLORS.map(c => (
+        <button key={c} onClick={() => onChange(c)}
+          className="w-6 h-6 rounded-full transition-transform hover:scale-110 flex-shrink-0"
+          style={{ backgroundColor: c, outline: value === c ? `2px solid ${c}` : 'none', outlineOffset: '2px' }}
+        />
+      ))}
+    </div>
+  )
 
   return (
     <>
@@ -58,7 +96,7 @@ export function ProjectManager({ projects, clients, onCreateProject, onDeletePro
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <div>
               <h2 className="text-base font-semibold text-gray-900">Gestionar proyectos</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Cualquiera puede crear y eliminar proyectos</p>
+              <p className="text-xs text-gray-400 mt-0.5">Crea, edita y elimina proyectos</p>
             </div>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -74,17 +112,57 @@ export function ProjectManager({ projects, clients, onCreateProject, onDeletePro
             )}
             {projects.map(project => {
               const client = getClient(project.client_id)
+
+              if (editingId === project.id) {
+                return (
+                  <div key={project.id} className="border border-blue-200 rounded-xl p-4 space-y-3 bg-blue-50/30">
+                    <input
+                      value={editName}
+                      onChange={e => setEditName(e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+                      autoFocus
+                    />
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1">Cliente asociado (opcional)</label>
+                      <select
+                        value={editClientId}
+                        onChange={e => setEditClientId(e.target.value)}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 bg-white"
+                      >
+                        <option value="">Sin cliente</option>
+                        {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <ColorPicker value={editColor} onChange={setEditColor} />
+                    <div className="flex gap-2">
+                      <button onClick={() => handleSaveEdit(project.id)}
+                        className="flex-1 bg-blue-500 text-white text-xs py-1.5 rounded-lg hover:bg-blue-600 transition-colors">
+                        Guardar
+                      </button>
+                      <button onClick={() => setEditingId(null)}
+                        className="flex-1 border border-gray-200 text-gray-500 text-xs py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )
+              }
+
               return (
                 <div key={project.id}
                   className="flex items-center gap-3 border border-gray-100 rounded-xl px-4 py-3 hover:border-gray-200 transition-colors">
                   <div className="w-2 h-8 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: client?.color || '#888780' }} />
+                    style={{ backgroundColor: project.color || client?.color || '#888780' }} />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-gray-800">{project.name}</div>
-                    {client && (
-                      <div className="text-xs text-gray-400 mt-0.5">{client.name}</div>
-                    )}
+                    {client && <div className="text-xs text-gray-400 mt-0.5">{client.name}</div>}
                   </div>
+
+                  <button onClick={() => handleEdit(project)}
+                    className="text-xs text-gray-400 hover:text-blue-500 transition-colors px-2 py-1">
+                    Editar
+                  </button>
+
                   {confirmDelete === project.id ? (
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs text-red-400">¿Eliminar?</span>
@@ -129,6 +207,10 @@ export function ProjectManager({ projects, clients, onCreateProject, onDeletePro
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1.5">Color</label>
+              <ColorPicker value={newColor} onChange={setNewColor} />
             </div>
             <button
               onClick={handleCreate}

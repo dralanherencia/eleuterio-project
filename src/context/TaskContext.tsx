@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import type { Task, Status, Client, Project } from '../types'
 import { supabase } from '../lib/supabase'
 
@@ -17,6 +17,7 @@ interface TaskContextType {
   updateClient: (id: string, updates: Partial<Client>) => Promise<void>
   deleteClient: (id: string) => Promise<void>
   createProject: (project: Omit<Project, 'id'>) => Promise<Project | null>
+  updateProject: (id: string, updates: Partial<Project>) => Promise<void>
   deleteProject: (id: string) => Promise<void>
 }
 
@@ -43,9 +44,13 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(!cached)
   const [error, setError] = useState<string | null>(null)
 
+  // Mutation sequence counter: prevents a slow in-flight fetchAll from
+  // overwriting optimistic updates or post-mutation fetches
+  const mutSeq = useRef(0)
+
   const fetchAll = useCallback(async () => {
     setError(null)
-    if (!loading) setLoading(false)
+    const seq = mutSeq.current
     try {
       const [t, c, p] = await Promise.all([
         supabase.from('tasks').select('*').order('position'),
@@ -58,11 +63,14 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         clients: c.data || [],
         projects: p.data || [],
       }
-      setTasks(data.tasks)
-      setClients(data.clients)
-      setProjects(data.projects)
-      saveCache(data)
-    } catch (e) {
+      // Only apply if no mutations started since this fetch began
+      if (mutSeq.current === seq) {
+        setTasks(data.tasks)
+        setClients(data.clients)
+        setProjects(data.projects)
+        saveCache(data)
+      }
+    } catch {
       setError('No se pudo conectar con la base de datos')
     } finally {
       setLoading(false)
@@ -71,108 +79,95 @@ export function TaskProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  // TASKS
+  // ─── TASKS ────────────────────────────────────────────────────────────────
+
   const updateTask = useCallback(async (id: string, updates: Partial<Task>) => {
+    mutSeq.current++
     setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t))
-    const { data } = await supabase.from('tasks').update(updates).eq('id', id).select().single()
-    if (data) {
-      setTasks(prev => {
-        const updated = prev.map(t => t.id === id ? data : t)
-        saveCache({ tasks: updated, clients, projects })
-        return updated
-      })
-    }
-  }, [clients, projects])
+    await supabase.from('tasks').update(updates).eq('id', id)
+    await fetchAll()
+  }, [fetchAll])
 
   const createTask = useCallback(async (task: Omit<Task, 'id' | 'created_at'>) => {
+    mutSeq.current++
     const { data } = await supabase.from('tasks').insert(task).select().single()
-    if (data) {
-      setTasks(prev => {
-        const updated = [...prev, data]
-        saveCache({ tasks: updated, clients, projects })
-        return updated
-      })
-    }
+    if (data) setTasks(prev => [...prev, data])
+    await fetchAll()
     return data
-  }, [clients, projects])
+  }, [fetchAll])
 
   const deleteTask = useCallback(async (id: string) => {
-    setTasks(prev => {
-      const updated = prev.filter(t => t.id !== id)
-      saveCache({ tasks: updated, clients, projects })
-      return updated
-    })
+    mutSeq.current++
+    setTasks(prev => prev.filter(t => t.id !== id))
     await supabase.from('tasks').delete().eq('id', id)
-  }, [clients, projects])
+    await fetchAll()
+  }, [fetchAll])
 
   const moveTask = useCallback(async (taskId: string, newStatus: Status, newPosition: number) => {
-    setTasks(prev => {
-      const updated = prev.map(t => t.id === taskId ? { ...t, status: newStatus, position: newPosition } : t)
-      saveCache({ tasks: updated, clients, projects })
-      return updated
-    })
+    mutSeq.current++
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus, position: newPosition } : t))
     await supabase.from('tasks').update({ status: newStatus, position: newPosition }).eq('id', taskId)
-  }, [clients, projects])
+    await fetchAll()
+  }, [fetchAll])
 
-  // CLIENTS
+  // ─── CLIENTS ──────────────────────────────────────────────────────────────
+
   const createClient = useCallback(async (client: Omit<Client, 'id'>) => {
+    mutSeq.current++
     const { data } = await supabase.from('clients').insert(client).select().single()
-    if (data) {
-      setClients(prev => {
-        const updated = [...prev, data].sort((a, b) => a.name.localeCompare(b.name))
-        saveCache({ tasks, clients: updated, projects })
-        return updated
-      })
-    }
+    if (data) setClients(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
+    await fetchAll()
     return data
-  }, [tasks, projects])
+  }, [fetchAll])
 
   const updateClient = useCallback(async (id: string, updates: Partial<Client>) => {
-    setClients(prev => {
-      const updated = prev.map(c => c.id === id ? { ...c, ...updates } : c)
-      saveCache({ tasks, clients: updated, projects })
-      return updated
-    })
+    mutSeq.current++
+    setClients(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c))
     await supabase.from('clients').update(updates).eq('id', id)
-  }, [tasks, projects])
+    await fetchAll()
+  }, [fetchAll])
 
   const deleteClient = useCallback(async (id: string) => {
-    setClients(prev => {
-      const updated = prev.filter(c => c.id !== id)
-      saveCache({ tasks, clients: updated, projects })
-      return updated
-    })
+    mutSeq.current++
+    setClients(prev => prev.filter(c => c.id !== id))
     await supabase.from('clients').delete().eq('id', id)
-  }, [tasks, projects])
+    await fetchAll()
+  }, [fetchAll])
 
-  // PROJECTS
+  // ─── PROJECTS ─────────────────────────────────────────────────────────────
+
   const createProject = useCallback(async (project: Omit<Project, 'id'>) => {
+    mutSeq.current++
     const { data } = await supabase.from('projects').insert(project).select().single()
-    if (data) {
-      setProjects(prev => {
-        const updated = [...prev, data].sort((a, b) => a.name.localeCompare(b.name))
-        saveCache({ tasks, clients, projects: updated })
-        return updated
-      })
-    }
+    if (data) setProjects(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
+    await fetchAll()
     return data
-  }, [tasks, clients])
+  }, [fetchAll])
+
+  const updateProject = useCallback(async (id: string, updates: Partial<Project>) => {
+    mutSeq.current++
+    setProjects(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))
+    await supabase.from('projects').update(updates).eq('id', id)
+    await fetchAll()
+  }, [fetchAll])
 
   const deleteProject = useCallback(async (id: string) => {
-    setProjects(prev => {
-      const updated = prev.filter(p => p.id !== id)
-      saveCache({ tasks, clients, projects: updated })
-      return updated
-    })
+    mutSeq.current++
+    // Optimistic: remove project + nullify task project_ids
+    setProjects(prev => prev.filter(p => p.id !== id))
+    setTasks(prev => prev.map(t => t.project_id === id ? { ...t, project_id: null } : t))
+    // Server: first nullify tasks, then delete project
+    await supabase.from('tasks').update({ project_id: null }).eq('project_id', id)
     await supabase.from('projects').delete().eq('id', id)
-  }, [tasks, clients])
+    await fetchAll()
+  }, [fetchAll])
 
   return (
     <TaskContext.Provider value={{
       tasks, clients, projects, loading, error, refetch: fetchAll,
       updateTask, createTask, deleteTask, moveTask,
       createClient, updateClient, deleteClient,
-      createProject, deleteProject,
+      createProject, updateProject, deleteProject,
     }}>
       {children}
     </TaskContext.Provider>

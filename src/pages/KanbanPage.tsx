@@ -27,7 +27,7 @@ export function KanbanPage() {
   const {
     tasks, clients, projects, loading, error, refetch,
     updateTask, createTask, deleteTask, moveTask,
-    createClient, updateClient, deleteClient, createProject, deleteProject,
+    createClient, updateClient, deleteClient, createProject, updateProject, deleteProject,
   } = useTasks()
 
   const [selectedProject, setSelectedProject] = useState<string>('all')
@@ -224,7 +224,7 @@ export function KanbanPage() {
 
       {showProjectManager && (
         <ProjectManager projects={projects} clients={clients}
-          onCreateProject={createProject} onDeleteProject={deleteProject}
+          onCreateProject={createProject} onUpdateProject={updateProject} onDeleteProject={deleteProject}
           onClose={() => setShowProjectManager(false)} />
       )}
       {showClientManager && (
