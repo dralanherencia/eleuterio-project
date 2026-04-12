@@ -99,10 +99,11 @@ export function TaskPanel({ task, isNew, clients, projects, onSave, onDelete, on
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1.5">Cliente</label>
               <select
-                value={form.client_id}
-                onChange={e => set('client_id', e.target.value)}
+                value={form.client_id || ''}
+                onChange={e => set('client_id', e.target.value || null)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400 transition-all bg-white"
               >
+                <option value="">Sin cliente</option>
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>

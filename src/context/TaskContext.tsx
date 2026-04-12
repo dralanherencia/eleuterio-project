@@ -130,6 +130,9 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const deleteClient = useCallback(async (id: string) => {
     mutSeq.current++
     setClients(prev => prev.filter(c => c.id !== id))
+    setTasks(prev => prev.map(t => t.client_id === id ? { ...t, client_id: null } : t))
+    // Nullify tasks first (FK constraint), then delete client
+    await supabase.from('tasks').update({ client_id: null }).eq('client_id', id)
     await supabase.from('clients').delete().eq('id', id)
     await fetchAll()
   }, [fetchAll])

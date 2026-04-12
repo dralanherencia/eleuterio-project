@@ -20,7 +20,7 @@ export interface Project {
 export interface Task {
   id: string
   project_id: string | null
-  client_id: string
+  client_id: string | null
   title: string
   status: Status
   progress: number
