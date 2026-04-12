@@ -152,26 +152,6 @@ export function TaskPanel({ task, isNew, clients, projects, onSave, onDelete, on
             </div>
           </div>
 
-          {/* Progreso */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-medium text-gray-500">Avance</label>
-              <span className="text-sm font-semibold text-blue-600">{form.progress}%</span>
-            </div>
-            <input
-              type="range"
-              min="0" max="100" step="5"
-              value={form.progress}
-              onChange={e => set('progress', Number(e.target.value))}
-              className="w-full accent-blue-500"
-            />
-            <div className="h-1.5 rounded-full bg-gray-100 mt-2 overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-300"
-                style={{ width: `${form.progress}%`, backgroundColor: client?.color || '#378ADD' }}
-              />
-            </div>
-          </div>
 
           {/* Prioridad y Responsable */}
           <div className="grid grid-cols-2 gap-3">

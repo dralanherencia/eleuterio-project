@@ -131,8 +131,10 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     mutSeq.current++
     setClients(prev => prev.filter(c => c.id !== id))
     setTasks(prev => prev.map(t => t.client_id === id ? { ...t, client_id: null } : t))
-    // Nullify tasks first (FK constraint), then delete client
+    setProjects(prev => prev.map(p => p.client_id === id ? { ...p, client_id: null } : p))
+    // Nullify FK references in tasks AND projects, then delete client
     await supabase.from('tasks').update({ client_id: null }).eq('client_id', id)
+    await supabase.from('projects').update({ client_id: null }).eq('client_id', id)
     await supabase.from('clients').delete().eq('id', id)
     await fetchAll()
   }, [fetchAll])
