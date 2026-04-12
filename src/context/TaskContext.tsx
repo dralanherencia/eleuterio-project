@@ -133,9 +133,12 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     setTasks(prev => prev.map(t => t.client_id === id ? { ...t, client_id: null } : t))
     setProjects(prev => prev.map(p => p.client_id === id ? { ...p, client_id: null } : p))
     // Nullify FK references in tasks AND projects, then delete client
-    await supabase.from('tasks').update({ client_id: null }).eq('client_id', id)
-    await supabase.from('projects').update({ client_id: null }).eq('client_id', id)
-    await supabase.from('clients').delete().eq('id', id)
+    const r1 = await supabase.from('tasks').update({ client_id: null }).eq('client_id', id)
+    const r2 = await supabase.from('projects').update({ client_id: null }).eq('client_id', id)
+    const r3 = await supabase.from('clients').delete().eq('id', id)
+    if (r1.error) console.error('[deleteClient] tasks nullify error:', r1.error)
+    if (r2.error) console.error('[deleteClient] projects nullify error:', r2.error)
+    if (r3.error) console.error('[deleteClient] delete error:', r3.error)
     await fetchAll()
   }, [fetchAll])
 
