@@ -90,6 +90,7 @@ export function TableView({ tasks, clients, projects, defaultAssignee, onUpdateT
       project_id: null,
       status: 'pending',
       progress: 0,
+      remind: false,
       due_date: null,
       next_step: null,
       notes: null,
