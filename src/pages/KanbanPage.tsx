@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTasks } from '../hooks/useTasks'
 import { useAuth } from '../hooks/useAuth'
 import { KanbanBoard } from '../components/kanban/KanbanBoard'
@@ -36,6 +36,32 @@ export function KanbanPage() {
   const [activeTab, setActiveTab] = useState<'mine' | 'mercedes' | 'all'>('mine')
   const [showClientManager, setShowClientManager] = useState(false)
   const [showProjectManager, setShowProjectManager] = useState(false)
+  const [hiddenProjects, setHiddenProjects] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('eleuterio_hidden_projects')
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    } catch { return new Set() }
+  })
+  const [showProjectFilter, setShowProjectFilter] = useState(false)
+
+  // Persistir proyectos ocultos
+  useEffect(() => {
+    localStorage.setItem('eleuterio_hidden_projects', JSON.stringify([...hiddenProjects]))
+  }, [hiddenProjects])
+
+  const toggleHideProject = (id: string) => {
+    setHiddenProjects(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      // Si ocultamos el proyecto seleccionado, resetear filtro
+      if (next.has(selectedProject)) {
+        setSelectedProject('all')
+        setSelectedClient('all')
+      }
+      return next
+    })
+  }
 
   if (loading) return <KanbanSkeleton />
   if (error) return <ErrorState message={error} onRetry={refetch} />
@@ -53,13 +79,14 @@ export function KanbanPage() {
   // El assignee activo (para crear tareas nuevas con el responsable correcto)
   const userAssignee = activeTab === 'mercedes' ? 'mercedes' : loggedAssignee
 
-  // --- PROYECTOS visibles en el contexto actual ---
-  const userProjects = projects.filter(p => userTasks.some(t => t.project_id === p.id))
+  // --- PROYECTOS visibles en el contexto actual (excluye los ocultos) ---
+  const visibleUserTasks = userTasks.filter(t => !t.project_id || !hiddenProjects.has(t.project_id))
+  const userProjects = projects.filter(p => visibleUserTasks.some(t => t.project_id === p.id))
 
   // --- JERARQUÍA: Proyecto → Cliente ---
   const projectTasks = selectedProject === 'all'
-    ? userTasks
-    : userTasks.filter(t => t.project_id === selectedProject)
+    ? visibleUserTasks
+    : visibleUserTasks.filter(t => t.project_id === selectedProject)
 
   const filteredTasks = selectedClient === 'all'
     ? projectTasks
@@ -163,6 +190,68 @@ export function KanbanPage() {
             </svg>
             Proyectos
           </button>
+
+          {/* Filtro: ocultar proyectos */}
+          <div className="relative">
+            <button
+              onClick={() => setShowProjectFilter(v => !v)}
+              className={`flex items-center gap-2 text-sm border px-3 py-2 rounded-xl transition-all ${
+                hiddenProjects.size > 0
+                  ? 'bg-amber-50 text-amber-700 border-amber-300 hover:border-amber-400'
+                  : 'text-gray-500 hover:text-gray-800 border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22"/>
+              </svg>
+              {hiddenProjects.size > 0 ? `${hiddenProjects.size} oculto${hiddenProjects.size > 1 ? 's' : ''}` : 'Ocultar'}
+            </button>
+
+            {showProjectFilter && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowProjectFilter(false)} />
+                <div className="absolute right-0 top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg z-20 min-w-[200px] py-2 overflow-hidden">
+                  <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                    Mostrar / Ocultar proyectos
+                  </div>
+                  {projects.length === 0 && (
+                    <div className="px-3 py-2 text-xs text-gray-400">Sin proyectos</div>
+                  )}
+                  {projects.map(p => {
+                    const isHidden = hiddenProjects.has(p.id)
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => toggleHideProject(p.id)}
+                        className="w-full flex items-center justify-between gap-3 px-3 py-2 hover:bg-gray-50 transition-colors text-left"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: p.color || '#888' }} />
+                          <span className={`text-sm truncate ${isHidden ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+                            {p.name}
+                          </span>
+                        </div>
+                        <span className={`text-xs flex-shrink-0 font-medium ${isHidden ? 'text-amber-500' : 'text-gray-300'}`}>
+                          {isHidden ? 'oculto' : 'visible'}
+                        </span>
+                      </button>
+                    )
+                  })}
+                  {hiddenProjects.size > 0 && (
+                    <>
+                      <div className="border-t border-gray-100 mt-1 pt-1" />
+                      <button
+                        onClick={() => setHiddenProjects(new Set())}
+                        className="w-full px-3 py-2 text-xs text-blue-500 hover:text-blue-700 text-left hover:bg-blue-50 transition-colors"
+                      >
+                        Mostrar todos
+                      </button>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
           <button onClick={() => setShowClientManager(true)}
             className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 border border-gray-200 hover:border-gray-300 px-3 py-2 rounded-xl transition-all">
             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -183,7 +272,7 @@ export function KanbanPage() {
               : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
           }`}
         >
-          Todas ({userTasks.length})
+          Todas ({visibleUserTasks.length})
         </button>
         {userProjects.map(p => {
           const pc = clients.find(cl => cl.id === p.client_id)
