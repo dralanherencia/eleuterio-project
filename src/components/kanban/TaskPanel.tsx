@@ -205,6 +205,36 @@ export function TaskPanel({ task, isNew, clients, projects, onSave, onDelete, on
             />
           </div>
 
+          {/* Recordatorio */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Recordatorio por correo</label>
+            <button
+              type="button"
+              onClick={() => setForm(prev => prev ? { ...prev, remind: !prev.remind } : prev)}
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-sm font-medium transition-all w-full ${
+                form.remind
+                  ? 'bg-blue-50 border-blue-300 text-blue-700'
+                  : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'
+              }`}
+            >
+              <span className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 border transition-all ${
+                form.remind ? 'bg-blue-500 border-blue-500' : 'border-gray-300'
+              }`}>
+                {form.remind && (
+                  <svg width="10" height="10" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path d="M5 13l4 4L19 7"/>
+                  </svg>
+                )}
+              </span>
+              {form.remind
+                ? 'Recibirás recordatorio 1 día antes y el día de vencimiento'
+                : 'Activar recordatorio por correo'}
+            </button>
+            {form.remind && !form.due_date && (
+              <p className="text-xs text-amber-500 mt-1.5">⚠ Agrega una fecha de vencimiento para que funcione el recordatorio</p>
+            )}
+          </div>
+
           {/* Link de archivo */}
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1.5">Link de archivo</label>
