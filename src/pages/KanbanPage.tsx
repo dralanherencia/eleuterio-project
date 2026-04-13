@@ -33,18 +33,25 @@ export function KanbanPage() {
   const [selectedProject, setSelectedProject] = useState<string>('all')
   const [selectedClient, setSelectedClient] = useState<string>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('kanban')
-  const [viewAll, setViewAll] = useState(false)
+  const [activeTab, setActiveTab] = useState<'mine' | 'mercedes' | 'all'>('mine')
   const [showClientManager, setShowClientManager] = useState(false)
   const [showProjectManager, setShowProjectManager] = useState(false)
 
   if (loading) return <KanbanSkeleton />
   if (error) return <ErrorState message={error} onRetry={refetch} />
 
-  // --- VISTA POR USUARIO: filtro base, toggleable ---
-  const userAssignee = getUserAssignee(user?.email)
-  const userTasks = viewAll
+  // --- VISTA POR PESTAÑA ---
+  const loggedAssignee = getUserAssignee(user?.email)
+  const otherAssignee: 'alan' | 'mercedes' = loggedAssignee === 'alan' ? 'mercedes' : 'alan'
+
+  const userTasks = activeTab === 'all'
     ? tasks
-    : tasks.filter(t => t.assignee === userAssignee || t.assignee === 'both')
+    : activeTab === 'mine'
+      ? tasks.filter(t => t.assignee === loggedAssignee || t.assignee === 'both')
+      : tasks.filter(t => t.assignee === otherAssignee || t.assignee === 'both')
+
+  // El assignee activo (para crear tareas nuevas con el responsable correcto)
+  const userAssignee = activeTab === 'mercedes' ? 'mercedes' : loggedAssignee
 
   // --- PROYECTOS visibles en el contexto actual ---
   const userProjects = projects.filter(p => userTasks.some(t => t.project_id === p.id))
@@ -69,8 +76,8 @@ export function KanbanPage() {
     setSelectedClient('all')
   }
 
-  const handleViewAllToggle = (all: boolean) => {
-    setViewAll(all)
+  const handleTabChange = (tab: 'mine' | 'mercedes' | 'all') => {
+    setActiveTab(tab)
     setSelectedProject('all')
     setSelectedClient('all')
   }
@@ -82,7 +89,7 @@ export function KanbanPage() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">
-            {viewAll ? 'Equipo' : getUserLabel(userAssignee)}
+            {activeTab === 'mine' ? getUserLabel(loggedAssignee) : activeTab === 'mercedes' ? getUserLabel('mercedes') : 'Equipo'}
           </h1>
           <div className="flex items-center gap-3 mt-1">
             <p className="text-sm text-gray-400">
@@ -91,22 +98,31 @@ export function KanbanPage() {
                 <span className="text-gray-300"> · {projects.find(p => p.id === selectedProject)?.name}</span>
               )}
             </p>
-            <div className="flex items-center gap-1">
+            {/* Pestañas de vista */}
+            <div className="flex items-center bg-gray-100 rounded-xl p-0.5 gap-0.5">
               <button
-                onClick={() => handleViewAllToggle(false)}
-                className={`text-xs px-2.5 py-0.5 rounded-full font-medium transition-all ${
-                  !viewAll ? 'bg-blue-100 text-blue-700' : 'text-gray-400 hover:text-gray-600'
+                onClick={() => handleTabChange('mine')}
+                className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all ${
+                  activeTab === 'mine' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Mis tareas
+                {getUserLabel(loggedAssignee)}
               </button>
               <button
-                onClick={() => handleViewAllToggle(true)}
-                className={`text-xs px-2.5 py-0.5 rounded-full font-medium transition-all ${
-                  viewAll ? 'bg-gray-200 text-gray-700' : 'text-gray-400 hover:text-gray-600'
+                onClick={() => handleTabChange('mercedes')}
+                className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all ${
+                  activeTab === 'mercedes' ? 'bg-pink-400 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Todo el equipo
+                {getUserLabel('mercedes')}
+              </button>
+              <button
+                onClick={() => handleTabChange('all')}
+                className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all ${
+                  activeTab === 'all' ? 'bg-purple-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Todas
               </button>
             </div>
           </div>
