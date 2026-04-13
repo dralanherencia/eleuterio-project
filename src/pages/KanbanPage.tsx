@@ -22,6 +22,7 @@ function getUserLabel(assignee: 'alan' | 'mercedes'): string {
   return assignee === 'alan' ? 'Dr. Alan' : 'Dra. Mercedes'
 }
 
+
 export function KanbanPage() {
   const { user } = useAuth()
   const {
@@ -77,7 +78,9 @@ export function KanbanPage() {
       : tasks.filter(t => t.assignee === otherAssignee || t.assignee === 'both')
 
   // El assignee activo (para crear tareas nuevas con el responsable correcto)
-  const userAssignee = activeTab === 'mercedes' ? 'mercedes' : loggedAssignee
+  const userAssignee = activeTab === 'mercedes'
+    ? (loggedAssignee === 'alan' ? 'mercedes' : 'alan')
+    : loggedAssignee
 
   // --- PROYECTOS visibles en el contexto actual (excluye los ocultos) ---
   const visibleUserTasks = userTasks.filter(t => !t.project_id || !hiddenProjects.has(t.project_id))
@@ -116,7 +119,11 @@ export function KanbanPage() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">
-            {activeTab === 'mine' ? getUserLabel(loggedAssignee) : activeTab === 'mercedes' ? getUserLabel('mercedes') : 'Equipo'}
+            {activeTab === 'mine'
+              ? (loggedAssignee === 'alan' ? 'Dr. Alan' : 'Dra. Mercedes')
+              : activeTab === 'mercedes'
+              ? (loggedAssignee === 'alan' ? 'Dra. Mercedes' : 'Dr. Alan')
+              : 'Equipo'}
           </h1>
           <div className="flex items-center gap-3 mt-1">
             <p className="text-sm text-gray-400">
@@ -133,7 +140,7 @@ export function KanbanPage() {
                   activeTab === 'mine' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                {getUserLabel(loggedAssignee)}
+                Mis tareas
               </button>
               <button
                 onClick={() => handleTabChange('mercedes')}
@@ -141,7 +148,7 @@ export function KanbanPage() {
                   activeTab === 'mercedes' ? 'bg-pink-400 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                {getUserLabel('mercedes')}
+                {getUserLabel(otherAssignee)}
               </button>
               <button
                 onClick={() => handleTabChange('all')}
