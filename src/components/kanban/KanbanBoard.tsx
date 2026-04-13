@@ -74,6 +74,7 @@ export function KanbanBoard({
       project_id: null,
       status: 'pending',
       progress: 0,
+      remind: false,
       due_date: null,
       next_step: null,
       notes: null,
