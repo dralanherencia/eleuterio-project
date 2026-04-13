@@ -70,7 +70,7 @@ export function DashboardPage() {
     return { label: formatDate(due), cls: 'bg-gray-50 text-gray-500' }
   }
 
-  const getClient = (id: string) => clients.find(c => c.id === id)
+  const getClient = (id: string | null) => clients.find(c => c.id === id)
   const { active, doneAll, dueSoon, avgProgress, clientData, statusData, upcoming, alanTasks, mercTasks } = metrics
 
   return (
@@ -156,7 +156,7 @@ export function DashboardPage() {
           )}
           {upcoming.map(task => {
             const client = getClient(task.client_id)
-            const badge = getDueBadge(task.due_date!)
+            const badge = getDueBadge(task.due_date ?? '')
             return (
               <div key={task.id} className="px-5 py-3.5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
                 <div className="flex-1 min-w-0">
