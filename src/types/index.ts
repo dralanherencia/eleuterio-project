@@ -31,6 +31,7 @@ export interface Task {
   priority: Priority
   assignee: Assignee
   position: number
+  remind?: boolean
   created_at?: string
 }
 
