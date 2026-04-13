@@ -6,8 +6,9 @@ import { Sidebar } from './components/shared/Sidebar'
 import { LoginPage } from './pages/LoginPage'
 import { KanbanSkeleton } from './components/shared/LoadingStates'
 
-const KanbanPage = lazy(() => import('./pages/KanbanPage').then(m => ({ default: m.KanbanPage })))
-const GanttPage  = lazy(() => import('./pages/GanttPage').then(m => ({ default: m.GanttPage })))
+const KanbanPage     = lazy(() => import('./pages/KanbanPage').then(m => ({ default: m.KanbanPage })))
+const GanttPage      = lazy(() => import('./pages/GanttPage').then(m => ({ default: m.GanttPage })))
+const EisenhowerPage = lazy(() => import('./pages/EisenhowerPage').then(m => ({ default: m.EisenhowerPage })))
 
 function AppLoader() {
   return (
@@ -46,6 +47,11 @@ function ProtectedApp() {
             <Route path="/gantt" element={
               <Suspense fallback={<div className="flex items-center justify-center h-64 text-gray-400 text-sm">Cargando Gantt…</div>}>
                 <GanttPage />
+              </Suspense>
+            }/>
+            <Route path="/eisenhower" element={
+              <Suspense fallback={<KanbanSkeleton />}>
+                <EisenhowerPage />
               </Suspense>
             }/>
             <Route path="*" element={<Navigate to="/" replace />} />
